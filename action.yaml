@@ -1,0 +1,62 @@
+name: ComputeNest Build-Service Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  Build-Service:
+    runs-on: ubuntu-latest
+    environment: default  # default secret environment: default
+    env:
+      AK_ID: ${{ secrets.AK_ID }}
+      AK_SECRET: ${{ secrets.AK_SECRET }}
+      SERVICE_NAME: ${Your Service Name}
+      REGION_ID: cn-hangzhou  # Default Region, you can change it to ap-southeast-1
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check .computenest Directory
+        run: |
+          if [ ! -d ".computenest" ]; then
+            echo "Error: .computenest directory not found. Please import your service from the ComputeNest console."
+            echo "Guide here: https://computenest.console.aliyun.com/service/create/default"
+            exit 1
+          fi
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install ComputeNest CLI
+        run: pip install computenest-cli
+
+      - name: Login to ComputeNest CLI
+        run: |
+          computenest-cli login --access_key_id "$AK_ID" --access_key_secret "$AK_SECRET"
+
+      - name: Build draft compute nest service
+        run: |
+          if [[ "$REGION_ID" != "ap-southeast-1" && "$REGION_ID" != "cn-hangzhou" ]]; then
+            echo "Error: Invalid REGION_ID value. Only 'ap-southeast-1' and 'cn-hangzhou' are allowed."
+            exit 1
+          fi
+          
+          params=()
+          
+          if [[ ! -z "$SERVICE_NAME" ]]; then
+            params+=(--service_name "$SERVICE_NAME")
+          else
+            echo "Error: SERVICE_NAME is not set."
+            exit 1
+          fi
+          
+          params+=(--region_id "$REGION_ID")
+          computenest-cli import "${params[@]}" || { echo 'Import failed'; exit 1; }
+
+      - name: Output Result
+        run: echo "Build-Service completed."
