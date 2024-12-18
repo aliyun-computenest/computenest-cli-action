@@ -1,6 +1,7 @@
 name: ComputeNest Build-Service Deployment
 description: Transform your repository into a reproducible service on Alibaba Cloud to CI/CD.
-icon: "./icon.png"
+branding:
+  icon: "./icon.png"
 on:
   workflow_dispatch:
   push:
