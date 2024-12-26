@@ -28,4 +28,37 @@ with:
   AK_ID: ${{ secrets.AK_ID }}
   AK_SECRET: ${{ secrets.AK_SECRET }}
   SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
-  REGION_ID: 'cn-hangzhou'  # Optional
+  REGION_ID: 'cn-hangzhou'
+```
+
+## Example
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: default  # 确保 'default' 环境中已设置 Secrets
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ComputeNest Build-Service Deployment
+        uses: aliyun-computenest/computenest-cli-action@version
+        with:
+          ak_id: ${{ secrets.AK_ID }}
+          ak_secret: ${{ secrets.AK_SECRET }}
+          service_name: "YourServiceName"  # 替换为你的服务名称
+          region_id: "cn-hangzhou"         # 可选，默认值已在 Action 中设置
+
+      - name: Run a multi-line script
+        run: |
+          echo "Add other actions to build,"
+          echo "test, and deploy your project."
