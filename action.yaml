@@ -1,65 +1,68 @@
-name: ComputeNest Build-Service Deployment
-description: Transform your repository into a reproducible service on Alibaba Cloud to CI/CD.
+name: 'ComputeNest Build-Service Deployment'
+description: 'Transform your repository into a reproducible service on Alibaba Cloud to CI/CD.'
 branding:
   icon: "./icon.png"
   color: white
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
 
-jobs:
-  Build-Service:
-    runs-on: ubuntu-latest
-    environment: default  # default secret environment: default
-    env:
-      AK_ID: ${{ secrets.AK_ID }}
-      AK_SECRET: ${{ secrets.AK_SECRET }}
-      SERVICE_NAME: ${Your Service Name}
-      REGION_ID: cn-hangzhou  # Default Region, you can change it to ap-southeast-1
+inputs:
+  ak_id:
+    description: 'Access Key ID for Alibaba Cloud'
+    required: true
+  ak_secret:
+    description: 'Access Key Secret for Alibaba Cloud'
+    required: true
+  service_name:
+    description: 'Name of the ComputeNest service'
+    required: true
+  region_id:
+    description: 'Region ID for deployment (e.g., cn-hangzhou)'
+    required: true
+    default: 'cn-hangzhou'
 
-    steps:
-      - uses: actions/checkout@v2
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-      - name: Check .computenest Directory
-        run: |
-          if [ ! -d ".computenest" ]; then
-            echo "Error: .computenest directory not found. Please import your service from the ComputeNest console."
-            echo "Guide here: https://computenest.console.aliyun.com/service/create/default"
-            exit 1
-          fi
+    - name: Check .computenest Directory
+      run: |
+        if [ ! -d ".computenest" ]; then
+          echo "Error: .computenest directory not found. Please import your service from the ComputeNest console."
+          echo "Guide here: https://computenest.console.aliyun.com/service/create/default"
+          exit 1
+        fi
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
 
-      - name: Install ComputeNest CLI
-        run: pip install computenest-cli
+    - name: Install ComputeNest CLI
+      run: pip install computenest-cli
 
-      - name: Login to ComputeNest CLI
-        run: |
-          computenest-cli login --access_key_id "$AK_ID" --access_key_secret "$AK_SECRET"
+    - name: Login to ComputeNest CLI
+      run: |
+        computenest-cli login --access_key_id "${{ inputs.ak_id }}" --access_key_secret "${{ inputs.ak_secret }}"
 
-      - name: Build draft compute nest service
-        run: |
-          if [[ "$REGION_ID" != "ap-southeast-1" && "$REGION_ID" != "cn-hangzhou" ]]; then
-            echo "Error: Invalid REGION_ID value. Only 'ap-southeast-1' and 'cn-hangzhou' are allowed."
-            exit 1
-          fi
-          
-          params=()
-          
-          if [[ ! -z "$SERVICE_NAME" ]]; then
-            params+=(--service_name "$SERVICE_NAME")
-          else
-            echo "Error: SERVICE_NAME is not set."
-            exit 1
-          fi
-          
-          params+=(--region_id "$REGION_ID")
-          computenest-cli import "${params[@]}" || { echo 'Import failed'; exit 1; }
+    - name: Build draft ComputeNest service
+      run: |
+        if [[ "${{ inputs.region_id }}" != "ap-southeast-1" && "${{ inputs.region_id }}" != "cn-hangzhou" ]]; then
+          echo "Error: Invalid REGION_ID value. Only 'ap-southeast-1' and 'cn-hangzhou' are allowed."
+          exit 1
+        fi
+        
+        params=()
+        
+        if [[ ! -z "${{ inputs.service_name }}" ]]; then
+          params+=(--service_name "${{ inputs.service_name }}")
+        else
+          echo "Error: SERVICE_NAME is not set."
+          exit 1
+        fi
+        
+        params+=(--region_id "${{ inputs.region_id }}")
+        computenest-cli import "${params[@]}" || { echo 'Import failed'; exit 1; }
 
-      - name: Output Result
-        run: echo "Build-Service completed."
+    - name: Output Result
+      run: echo "Build-Service completed."
