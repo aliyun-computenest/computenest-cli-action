@@ -26,6 +26,7 @@ runs:
       uses: actions/checkout@v2
 
     - name: Check .computenest Directory
+      shell: bash
       run: |
         if [ ! -d ".computenest" ]; then
           echo "Error: .computenest directory not found. Please import your service from the ComputeNest console."
@@ -39,13 +40,16 @@ runs:
         python-version: '3.10'
 
     - name: Install ComputeNest CLI
+      shell: bash
       run: pip install computenest-cli
 
     - name: Login to ComputeNest CLI
+      shell: bash
       run: |
         computenest-cli login --access_key_id "${{ inputs.ak_id }}" --access_key_secret "${{ inputs.ak_secret }}"
 
     - name: Build draft ComputeNest service
+      shell: bash
       run: |
         if [[ "${{ inputs.region_id }}" != "ap-southeast-1" && "${{ inputs.region_id }}" != "cn-hangzhou" ]]; then
           echo "Error: Invalid REGION_ID value. Only 'ap-southeast-1' and 'cn-hangzhou' are allowed."
@@ -65,4 +69,5 @@ runs:
         computenest-cli import "${params[@]}" || { echo 'Import failed'; exit 1; }
 
     - name: Output Result
+      shell: bash
       run: echo "Build-Service completed."
